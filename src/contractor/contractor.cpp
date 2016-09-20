@@ -95,18 +95,21 @@ EdgeWeight getNewWeight(IterType new_speed_iter,
             : INVALID_EDGE_WEIGHT;
     // the check here is enabled by the `--verify-weights` flag
     // it logs a warning if the new weight exceeds a heuristic of what a reasonable weight update is
-    if (verify_weights > 0)
+    if (verify_weights > 0 && new_segment_weight != INVALID_EDGE_WEIGHT)
     {
-        if ((new_segment_weight < oldWeight) && ((oldWeight / new_segment_weight) > verify_weights))
+        auto newSecs = new_segment_weight / 10.0;
+        auto oldSecs = oldWeight / 10.0;
+        auto approx_original_speed = (segment_length / oldSecs) * 3.6;
+        if ((new_segment_weight < oldWeight) && ((oldSecs / newSecs) >= verify_weights))
         {
-            auto newSecs = new_segment_weight / 10.0;
-            auto oldSecs = oldWeight / 10.0;
             auto speed_file = segment_speed_filenames.at(new_speed_iter->speed_source.source - 1);
             util::SimpleLogger().Write(logWARNING)
-                << "[verify weights] Update from " << oldSecs << "s to " << newSecs
-                << "s on segment " << new_speed_iter->segment.from << ","
-                << new_speed_iter->segment.to << " based on " << speed_file
-                << ". Assigned new speed of " << new_speed_iter->speed_source.speed;
+                << "[verify weights] Edge weight update from " << oldSecs << "s to " << newSecs << "s"
+                << ". New speed: " << new_speed_iter->speed_source.speed << " kph"
+                << ". Old speed: " << approx_original_speed << " kph"
+                << ". Segment length: " << segment_length << " m"
+                << ". Segment: " << new_speed_iter->segment.from << ","
+                << new_speed_iter->segment.to << " based on " << speed_file;
         }
     }
 
