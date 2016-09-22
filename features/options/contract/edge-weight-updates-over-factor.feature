@@ -1,5 +1,5 @@
-@contract @options @verify-weights
-Feature: osrm-contract command line option: verify-weights
+@contract @options @edge-weight-updates-over-factor
+Feature: osrm-contract command line option: edge-weight-updates-over-factor
 
     Background: Log edge weight updates over given factor
 
@@ -21,9 +21,9 @@ Feature: osrm-contract command line option: verify-weights
         1,3,100
         """
         And the data has been extracted
-        When I run "osrm-contract --verify-weights 2 --segment-speed-file speeds.csv {extracted_base}.osrm"
-        Then stderr should contain 1 lines
-        Then stderr should contain "verify weights"
+        When I run "osrm-contract --edge-weight-updates-over-factor 2 --segment-speed-file speeds.csv {extracted_base}.osrm"
+        Then stderr should be empty
+        Then stderr should contain "weight updates"
         Then stderr should contain "Assigned new speed of 100"
         And I route I should get
             | from | to | route          | speed    |

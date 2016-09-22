@@ -87,24 +87,24 @@ EdgeWeight getNewWeight(IterType new_speed_iter,
                         const double &segment_length,
                         const std::vector<std::string> &segment_speed_filenames,
                         EdgeWeight oldWeight,
-                        const double &verify_weights)
+                        const double &log_edge_updates_factor)
 {
     auto new_segment_weight =
         (new_speed_iter->speed_source.speed > 0)
             ? distanceAndSpeedToWeight(segment_length, new_speed_iter->speed_source.speed)
             : INVALID_EDGE_WEIGHT;
-    // the check here is enabled by the `--verify-weights` flag
+    // the check here is enabled by the `--edge-weight-updates-over-factor` flag
     // it logs a warning if the new weight exceeds a heuristic of what a reasonable weight update is
-    if (verify_weights > 0 && new_segment_weight != INVALID_EDGE_WEIGHT)
+    if (log_edge_updates_factor > 0 && new_segment_weight != INVALID_EDGE_WEIGHT)
     {
         auto newSecs = new_segment_weight / 10.0;
         auto oldSecs = oldWeight / 10.0;
         auto approx_original_speed = (segment_length / oldSecs) * 3.6;
-        if ((new_segment_weight < oldWeight) && ((oldSecs / newSecs) >= verify_weights))
+        if ((new_segment_weight < oldWeight) && ((oldSecs / newSecs) >= log_edge_updates_factor))
         {
             auto speed_file = segment_speed_filenames.at(new_speed_iter->speed_source.source - 1);
             util::SimpleLogger().Write(logWARNING)
-                << "[verify weights] Edge weight update from " << oldSecs << "s to " << newSecs << "s"
+                << "[weight updates] Edge weight update from " << oldSecs << "s to " << newSecs << "s"
                 << ". New speed: " << new_speed_iter->speed_source.speed << " kph"
                 << ". Old speed: " << approx_original_speed << " kph"
                 << ". Segment length: " << segment_length << " m"
@@ -149,7 +149,7 @@ int Contractor::Run()
                                                config.datasource_names_path,
                                                config.datasource_indexes_path,
                                                config.rtree_leaf_path,
-                                               config.verify_weights);
+                                               config.log_edge_updates_factor);
 
     // Contracting the edge-expanded graph
 
@@ -407,7 +407,7 @@ EdgeID Contractor::LoadEdgeExpandedGraph(
     const std::string &datasource_names_filename,
     const std::string &datasource_indexes_filename,
     const std::string &rtree_leaf_filename,
-    const double &verify_weights)
+    const double &log_edge_updates_factor)
 {
     if (segment_speed_filenames.size() > 255 || turn_penalty_filenames.size() > 255)
         throw util::exception("Limit of 255 segment speed and turn penalty files each reached");
@@ -628,7 +628,7 @@ EdgeID Contractor::LoadEdgeExpandedGraph(
                             segment_speed_filenames,
                             m_geometry_list[forward_begin + leaf_object.fwd_segment_position]
                                 .weight,
-                            verify_weights);
+                            log_edge_updates_factor);
                         m_geometry_list[forward_begin + leaf_object.fwd_segment_position].weight =
                             new_segment_weight;
                         m_geometry_datasource[forward_begin + leaf_object.fwd_segment_position] =
